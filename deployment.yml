@@ -1,0 +1,79 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: default-conf
+data:
+ default.conf: |
+  server {
+    listen       80;
+    server_name  localhost;
+    root /usr/share/nginx/html;
+    index index.html index.htm;
+    location ~* \.(?:manifest|appcache|html?|xml|json)$ {
+      expires off;
+      etag off;
+      access_log off;
+      add_header Cache-Control "max-age=86400, public, must-revalidate";
+    }
+    location ~* \.(?:css|js)$ {
+      try_files $uri =404;
+      expires off;
+      etag off;
+      access_log off;
+      add_header Cache-Control "max-age=86400, public, must-revalidate";
+    }
+    location ~ ^.+\..+$ {
+      try_files $uri =404;
+    }
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    location /api {
+        proxy_pass http://172.18.0.6:5000;
+        proxy_set_header Host api ;
+     }
+   }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: trellofront
+spec:
+ replicas: 1 
+ selector:
+    matchLabels:
+        app: trellofront
+ template:
+   metadata:
+     labels:
+       app: trellofront
+   spec: 
+    containers:
+      - name: trellofront
+        image: muhammadmansour/tfront:5
+        volumeMounts:
+        - name: default-conf
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+          readOnly: true
+    volumes:
+      - name: default-conf
+        configMap:
+          name: default-conf
+          items:
+            - key: default.conf
+              path: default.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trelloservice
+spec:
+   selector: 
+    app: trellofront
+   ports:
+      - protocol: 'TCP'
+        port: 5050
+        targetPort: 80
+   type: LoadBalancer

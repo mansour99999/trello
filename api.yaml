@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: api
+spec:
+ replicas: 1
+ selector:
+   matchLabels:
+        app: api
+ template:
+   metadata:
+     labels:
+       app: api
+   spec:
+    containers:
+      - name: api
+        image: muhammadmansour/tserver:latest
+        env: 
+         - name: MONGO_URI
+           value: mongodb://172.18.0.2:27017
+         - name: JWT_SECRET
+           value: yoursecretkey
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: apiservice
+spec:
+   selector:
+      app: api
+   ports:
+      - protocol: 'TCP'
+        port: 5000
+        targetPort: 5000
+   type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env
+data:
+    .env: |
+         MONGO_URI=mongodb://mongo1-65dbccd977-d8lpb:27017
+         JWT_SECRET=yoursecretkey
+

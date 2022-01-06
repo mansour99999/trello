@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: mongo1
+spec:
+ replicas: 1
+ selector:
+    matchLabels:
+        app: mongo1
+ template:
+   metadata:
+     labels:
+       app: mongo1
+   spec:
+    containers:
+      - name: mongo
+        image: mongo
+---
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+spec:
+   selector:
+        app: mongo1
+   ports:
+      - protocol: 'TCP'
+        port: 9000
+        targetPort: 9000
+   type: ClusterIP
+
